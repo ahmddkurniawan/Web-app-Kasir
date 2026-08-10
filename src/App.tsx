@@ -1,0 +1,125 @@
+import React, { useState, useEffect } from 'react';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import { SyncProvider, useSync } from './context/SyncContext';
+import { Navbar } from './components/layout/Navbar';
+import { Sidebar } from './components/layout/Sidebar';
+import { LoginForm } from './components/auth/LoginForm';
+import { POSScreen } from './components/pos/POSScreen';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { InventoryManagement } from './components/admin/InventoryManagement';
+import { TransactionHistory } from './components/admin/TransactionHistory';
+import { OwnerDashboard } from './components/owner/OwnerDashboard';
+import { SalesReport } from './components/owner/SalesReport';
+import { ProductAnalytics } from './components/owner/ProductAnalytics';
+import { AdminPerformance } from './components/owner/AdminPerformance';
+import { ProductManagement } from './components/owner/ProductManagement';
+import { DeviceMonitoring } from './components/owner/DeviceMonitoring';
+import { Download, RefreshCw, WifiOff } from 'lucide-react';
+
+const MainLayout: React.FC = () => {
+  const { user } = useAuth();
+  const { isOnline, pendingCount } = useSync();
+  const [activeTab, setActiveTab] = useState<string>('pos');
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  // Default tab when logging in
+  useEffect(() => {
+    if (user?.role === 'OWNER') {
+      setActiveTab('owner-dashboard');
+    } else if (user?.role === 'ADMIN') {
+      setActiveTab('pos');
+    }
+  }, [user]);
+
+  // PWA BeforeInstallPrompt listener
+  useEffect(() => {
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+  }, []);
+
+  const handleInstallPWA = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
+
+  if (!user) {
+    return <LoginForm />;
+  }
+
+  return (
+    <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-600 selection:text-white">
+      
+      {/* Offline Alert Strip */}
+      {!isOnline && (
+        <div className="bg-amber-600 text-stone-950 px-4 py-2 text-xs font-black flex items-center justify-between shadow-md">
+          <div className="flex items-center space-x-2">
+            <WifiOff className="w-4 h-4 text-stone-950 animate-pulse" />
+            <span>MODE OFFLINE AKTIF: Kasir tetap beroperasi normal! Ada {pendingCount} transaksi tersimpan lokal.</span>
+          </div>
+          <span className="text-[10px] uppercase font-mono tracking-widest bg-stone-950 text-amber-400 px-2 py-0.5 rounded">
+            Auto Sync saat Online
+          </span>
+        </div>
+      )}
+
+      {/* PWA Install Banner */}
+      {deferredPrompt && (
+        <div className="bg-stone-900 border-b border-amber-600/40 px-4 py-2 text-xs flex items-center justify-between text-stone-200">
+          <div className="flex items-center space-x-2">
+            <Download className="w-4 h-4 text-amber-500" />
+            <span>Install Ngopay POS App di perangkat ini untuk performa offline maksimal.</span>
+          </div>
+          <button
+            onClick={handleInstallPWA}
+            className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] rounded-lg shadow transition-colors"
+          >
+            Install App
+          </button>
+        </div>
+      )}
+
+      {/* Top Navigation */}
+      <Navbar />
+
+      {/* Main Container */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+
+        {/* Content View */}
+        <main className="flex-1 overflow-y-auto bg-stone-950 pb-16 md:pb-0">
+          {activeTab === 'pos' && <POSScreen />}
+          {activeTab === 'dashboard' && <AdminDashboard />}
+          {activeTab === 'inventory' && <InventoryManagement />}
+          {activeTab === 'history' && <TransactionHistory />}
+
+          {activeTab === 'owner-dashboard' && <OwnerDashboard />}
+          {activeTab === 'sales-report' && <SalesReport />}
+          {activeTab === 'product-analytics' && <ProductAnalytics />}
+          {activeTab === 'admin-performance' && <AdminPerformance />}
+          {activeTab === 'products' && <ProductManagement />}
+          {activeTab === 'devices' && <DeviceMonitoring />}
+        </main>
+      </div>
+
+    </div>
+  );
+};
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <SyncProvider>
+        <MainLayout />
+      </SyncProvider>
+    </AuthProvider>
+  );
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Ngopay POS",
+  "description": "Offline-First POS & Sales Management System untuk Cafe Ngopay dengan PWA, IndexedDB sync, role-based access, inventory tracking, dan Owner Dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

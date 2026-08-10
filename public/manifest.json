@@ -1,0 +1,21 @@
+{
+  "name": "Ngopay POS Cafe",
+  "short_name": "Ngopay POS",
+  "description": "System Kasir Cafe Ngopay - Offline-First & Realtime Multi-Device",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0a09",
+  "theme_color": "#0c0a09",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=192&auto=format&fit=crop&q=80",
+      "sizes": "192x192",
+      "type": "image/jpeg"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=512&auto=format&fit=crop&q=80",
+      "sizes": "512x512",
+      "type": "image/jpeg"
+    }
+  ]
+}
