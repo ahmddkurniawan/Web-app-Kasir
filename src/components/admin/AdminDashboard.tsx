@@ -177,52 +177,93 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onStartPOS }) =>
             <p className="text-xs text-stone-500">Klik "Mulai Transaksi" untuk melayani pelanggan pertama.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-stone-300">
-              <thead className="bg-stone-950 text-stone-400 font-bold uppercase tracking-wider text-[10px] border-b border-stone-800">
-                <tr>
-                  <th className="py-3 px-4">No. Trx</th>
-                  <th className="py-3 px-4">Waktu</th>
-                  <th className="py-3 px-4">Items</th>
-                  <th className="py-3 px-4">Metode</th>
-                  <th className="py-3 px-4 text-right">Total</th>
-                  <th className="py-3 px-4 text-center">Sync Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-800/60 font-mono">
-                {todayTransactions.map((trx) => (
-                  <tr key={trx.localId} className="hover:bg-stone-800/40">
-                    <td className="py-3 px-4 font-bold text-amber-500">{trx.transactionNumber}</td>
-                    <td className="py-3 px-4 text-stone-400">
-                      {new Date(trx.transactionDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                    </td>
-                    <td className="py-3 px-4 max-w-[200px] truncate">
-                      {trx.items.map(i => `${i.productName} (${i.quantity})`).join(', ')}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="px-2 py-0.5 rounded bg-stone-800 text-stone-300 font-semibold">
-                        {trx.paymentMethod}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right font-bold text-stone-100">
-                      {formatRupiah(trx.total)}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      {trx.syncStatus === 'synced' ? (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold">
-                          Synced
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-bold">
-                          Pending
-                        </span>
-                      )}
-                    </td>
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs text-stone-300">
+                <thead className="bg-stone-950 text-stone-400 font-bold uppercase tracking-wider text-[10px] border-b border-stone-800">
+                  <tr>
+                    <th className="py-3 px-4">No. Trx</th>
+                    <th className="py-3 px-4">Waktu</th>
+                    <th className="py-3 px-4">Items</th>
+                    <th className="py-3 px-4">Metode</th>
+                    <th className="py-3 px-4 text-right">Total</th>
+                    <th className="py-3 px-4 text-center">Sync Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody className="divide-y divide-stone-800/60 font-mono">
+                  {todayTransactions.map((trx) => (
+                    <tr key={trx.localId} className="hover:bg-stone-800/40">
+                      <td className="py-3 px-4 font-bold text-amber-500">{trx.transactionNumber}</td>
+                      <td className="py-3 px-4 text-stone-400">
+                        {new Date(trx.transactionDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="py-3 px-4 max-w-[200px] truncate">
+                        {trx.items.map(i => `${i.productName} (${i.quantity})`).join(', ')}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded bg-stone-800 text-stone-300 font-semibold">
+                          {trx.paymentMethod}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right font-bold text-stone-100">
+                        {formatRupiah(trx.total)}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {trx.syncStatus === 'synced' ? (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold">
+                            Synced
+                          </span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-bold">
+                            Pending
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="grid md:hidden grid-cols-1 gap-3">
+              {todayTransactions.map((trx) => (
+                <div key={trx.localId} className="bg-stone-950 p-4 rounded-xl border border-stone-800 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <div className="font-bold text-amber-500 text-sm">{trx.transactionNumber}</div>
+                      <div className="text-[10px] text-stone-400">
+                        {new Date(trx.transactionDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                    </div>
+                    {trx.syncStatus === 'synced' ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold">
+                        Synced
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-950 text-amber-400 border border-amber-800 text-[10px] font-bold">
+                        Pending
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="text-xs text-stone-300 line-clamp-2">
+                    {trx.items.map(i => `${i.productName} (${i.quantity})`).join(', ')}
+                  </div>
+                  
+                  <div className="flex justify-between items-center pt-2 border-t border-stone-800/60">
+                    <span className="px-2 py-0.5 rounded bg-stone-800 text-stone-300 font-semibold text-[10px]">
+                      {trx.paymentMethod}
+                    </span>
+                    <span className="font-bold text-stone-100 text-sm">
+                      {formatRupiah(trx.total)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

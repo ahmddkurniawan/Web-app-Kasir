@@ -269,36 +269,67 @@ export const OwnerDashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-stone-300">
-              <thead className="bg-stone-950 text-stone-400 font-bold uppercase tracking-wider text-[10px] border-b border-stone-800">
-                <tr>
-                  <th className="py-3 px-3">#</th>
-                  <th className="py-3 px-3">Nama Produk</th>
-                  <th className="py-3 px-3">Kategori</th>
-                  <th className="py-3 px-3 text-right">Terjual</th>
-                  <th className="py-3 px-3 text-right">Omzet</th>
-                  <th className="py-3 px-3 text-right">Kontribusi</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-stone-800/60 font-mono">
-                {(analytics?.topProducts || []).map((p, idx) => (
-                  <tr key={p.productId} className="hover:bg-stone-800/40">
-                    <td className="py-2.5 px-3 font-bold text-amber-500">{idx + 1}</td>
-                    <td className="py-2.5 px-3 font-bold text-stone-100 font-sans">{p.productName}</td>
-                    <td className="py-2.5 px-3 text-stone-400">{p.category}</td>
-                    <td className="py-2.5 px-3 text-right font-bold text-stone-200">{p.qtySold} item</td>
-                    <td className="py-2.5 px-3 text-right font-bold text-amber-500">{formatRupiah(p.revenue)}</td>
-                    <td className="py-2.5 px-3 text-right">
-                      <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-bold text-[10px]">
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs text-stone-300">
+                <thead className="bg-stone-950 text-stone-400 font-bold uppercase tracking-wider text-[10px] border-b border-stone-800">
+                  <tr>
+                    <th className="py-3 px-3">#</th>
+                    <th className="py-3 px-3">Nama Produk</th>
+                    <th className="py-3 px-3">Kategori</th>
+                    <th className="py-3 px-3 text-right">Terjual</th>
+                    <th className="py-3 px-3 text-right">Omzet</th>
+                    <th className="py-3 px-3 text-right">Kontribusi</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-stone-800/60 font-mono">
+                  {(analytics?.topProducts || []).map((p, idx) => (
+                    <tr key={p.productId} className="hover:bg-stone-800/40">
+                      <td className="py-2.5 px-3 font-bold text-amber-500">{idx + 1}</td>
+                      <td className="py-2.5 px-3 font-bold text-stone-100 font-sans">{p.productName}</td>
+                      <td className="py-2.5 px-3 text-stone-400">{p.category}</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-stone-200">{p.qtySold} item</td>
+                      <td className="py-2.5 px-3 text-right font-bold text-amber-500">{formatRupiah(p.revenue)}</td>
+                      <td className="py-2.5 px-3 text-right">
+                        <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-bold text-[10px]">
+                          {p.percentageContribution}%
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="grid md:hidden grid-cols-1 gap-3">
+              {(analytics?.topProducts || []).map((p, idx) => (
+                <div key={p.productId} className="bg-stone-950 p-4 rounded-xl border border-stone-800 flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 rounded-full bg-amber-950/60 text-amber-500 font-black flex items-center justify-center text-sm border border-amber-900/40">
+                      {idx + 1}
+                    </div>
+                    <div>
+                      <div className="font-bold text-stone-100 text-sm">{p.productName}</div>
+                      <div className="text-[10px] text-stone-400 font-medium bg-stone-900 inline-block px-1.5 py-0.5 rounded mt-0.5">
+                        {p.category}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-amber-400 text-sm">{formatRupiah(p.revenue)}</div>
+                    <div className="flex justify-end items-center space-x-1.5 mt-0.5">
+                      <span className="text-[10px] text-stone-300 font-medium">{p.qtySold} item</span>
+                      <span className="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-bold text-[9px]">
                         {p.percentageContribution}%
                       </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         </div>
 
         {/* Live Active Devices Status */}
