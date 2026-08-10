@@ -97,17 +97,20 @@ const MainLayout: React.FC = () => {
 
         {/* Content View */}
         <main className="flex-1 overflow-y-auto bg-stone-950 pb-20 md:pb-0">
+          {/* Admin Tabs */}
+          {activeTab === 'admin-dashboard' && <AdminDashboard />}
           {activeTab === 'pos' && <POSScreen />}
-          {activeTab === 'dashboard' && <AdminDashboard />}
+          {activeTab === 'transactions' && <TransactionHistory />}
           {activeTab === 'inventory' && <InventoryManagement />}
-          {activeTab === 'history' && <TransactionHistory />}
 
+          {/* Owner Tabs */}
           {activeTab === 'owner-dashboard' && <OwnerDashboard />}
           {activeTab === 'sales-report' && <SalesReport />}
           {activeTab === 'product-analytics' && <ProductAnalytics />}
           {activeTab === 'admin-performance' && <AdminPerformance />}
-          {activeTab === 'products' && <ProductManagement />}
-          {activeTab === 'devices' && <DeviceMonitoring />}
+          {activeTab === 'device-monitoring' && <DeviceMonitoring />}
+          {activeTab === 'product-management' && <ProductManagement />}
+          {activeTab === 'all-transactions' && <TransactionHistory />}
         </main>
       </div>
 
