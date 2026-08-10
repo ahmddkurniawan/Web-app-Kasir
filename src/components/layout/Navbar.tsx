@@ -100,24 +100,24 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
             )}
 
             {/* Online / Offline Status Badge */}
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1.5 sm:space-x-2">
               {syncState === 'ONLINE' && (
-                <span id="status-online-badge" className="flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
-                  <Wifi className="w-3.5 h-3.5 mr-1" /> ONLINE
+                <span id="status-online-badge" className="flex items-center text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 sm:mr-1.5 animate-pulse"></span>
+                  <Wifi className="hidden sm:block w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">ONLINE</span>
                 </span>
               )}
 
               {syncState === 'OFFLINE' && (
-                <span id="status-offline-badge" className="flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-rose-950/80 text-rose-400 border border-rose-800/60">
-                  <span className="w-2 h-2 rounded-full bg-rose-500 mr-1.5"></span>
-                  <WifiOff className="w-3.5 h-3.5 mr-1" /> OFFLINE
+                <span id="status-offline-badge" className="flex items-center text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full bg-rose-950/80 text-rose-400 border border-rose-800/60">
+                  <span className="w-2 h-2 rounded-full bg-rose-500 sm:mr-1.5"></span>
+                  <WifiOff className="hidden sm:block w-3.5 h-3.5 mr-1" /> <span className="hidden sm:inline">OFFLINE</span>
                 </span>
               )}
 
               {syncState === 'SYNCING' && (
-                <span id="status-syncing-badge" className="flex items-center text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-800/60">
-                  <RefreshCw className="w-3.5 h-3.5 mr-1 animate-spin" /> SINKRON
+                <span id="status-syncing-badge" className="flex items-center text-xs font-semibold px-2 sm:px-2.5 py-1 rounded-full bg-amber-950/80 text-amber-300 border border-amber-800/60">
+                  <RefreshCw className="w-3.5 h-3.5 sm:mr-1 animate-spin" /> <span className="hidden sm:inline">SINKRON</span>
                 </span>
               )}
 
@@ -126,7 +126,7 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
                 id="manual-sync-button"
                 onClick={handleSyncClick}
                 disabled={isSyncing || syncState === 'OFFLINE'}
-                className={`relative flex items-center text-xs px-2.5 py-1.5 rounded-lg font-medium transition-colors ${
+                className={`relative flex items-center text-xs px-2 py-1.5 sm:px-2.5 rounded-lg font-medium transition-colors ${
                   pendingCount > 0
                     ? 'bg-amber-600 hover:bg-amber-500 text-white shadow-sm'
                     : 'bg-stone-800 hover:bg-stone-700 text-stone-300'
@@ -136,7 +136,7 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
                 <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
                 <span className="hidden md:inline ml-1.5">Sync</span>
                 {pendingCount > 0 && (
-                  <span id="pending-sync-badge" className="ml-1.5 px-1.5 py-0.2 bg-rose-600 text-white font-bold text-[10px] rounded-full">
+                  <span id="pending-sync-badge" className="ml-1 px-1.5 py-0.5 bg-rose-600 text-white font-bold text-[10px] rounded-full">
                     {pendingCount}
                   </span>
                 )}

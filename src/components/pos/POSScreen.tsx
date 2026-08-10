@@ -189,17 +189,17 @@ export const POSScreen: React.FC = () => {
       <div className="flex-1 p-4 sm:p-6 space-y-5 overflow-y-auto">
         
         {/* Search & Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-black text-stone-100 tracking-tight flex items-center gap-2">
-              <Coffee className="w-6 h-6 text-amber-500" />
+            <h1 className="text-xl sm:text-2xl font-black text-stone-100 tracking-tight flex items-center gap-2">
+              <Coffee className="w-6 h-6 sm:w-7 sm:h-7 text-amber-500" />
               Kasir POS Cafe Ngopay
             </h1>
-            <p className="text-xs text-stone-400">Pilih menu, atur pesanan, dan selesaikan transaksi kasir</p>
+            <p className="text-[11px] sm:text-xs text-stone-400 mt-1">Pilih menu, atur pesanan, dan selesaikan transaksi kasir</p>
           </div>
 
           {/* Search Input */}
-          <div className="relative w-full sm:w-72">
+          <div className="relative w-full md:w-80">
             <Search className="w-4 h-4 absolute left-3.5 top-3 text-stone-500 pointer-events-none" />
             <input
               id="search-product-input"
@@ -207,7 +207,7 @@ export const POSScreen: React.FC = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari menu, SKU, kategori..."
-              className="w-full pl-10 pr-4 py-2 bg-stone-900 border border-stone-800 rounded-xl text-stone-100 text-xs focus:outline-none focus:border-amber-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2.5 bg-stone-900 border border-stone-800 rounded-xl text-stone-100 text-sm focus:outline-none focus:border-amber-500 transition-colors shadow-inner"
             />
           </div>
         </div>
@@ -235,13 +235,13 @@ export const POSScreen: React.FC = () => {
 
         {/* Product Cards Grid */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 animate-pulse">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 animate-pulse pb-28 lg:pb-0">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
               <div key={i} className="h-56 bg-stone-900 rounded-2xl border border-stone-800/60" />
             ))}
           </div>
         ) : filteredProducts.length === 0 ? (
-          <div className="text-center py-16 bg-stone-900/40 rounded-2xl border border-stone-800/60 p-6 space-y-2">
+          <div className="text-center py-16 bg-stone-900/40 rounded-2xl border border-stone-800/60 p-6 space-y-2 pb-28 lg:pb-0">
             <Coffee className="w-10 h-10 text-stone-600 mx-auto" />
             <h3 className="text-sm font-bold text-stone-300">Tidak ada produk ditemukan</h3>
             <p className="text-xs text-stone-500">
@@ -249,7 +249,7 @@ export const POSScreen: React.FC = () => {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5 pb-20 lg:pb-0">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 pb-28 lg:pb-0">
             {filteredProducts.map((product) => (
               <ProductCard
                 key={product.id}

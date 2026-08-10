@@ -21,6 +21,7 @@ const MainLayout: React.FC = () => {
   const { isOnline, pendingCount } = useSync();
   const [activeTab, setActiveTab] = useState<string>('pos');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Default tab when logging in
   useEffect(() => {
@@ -87,15 +88,15 @@ const MainLayout: React.FC = () => {
       )}
 
       {/* Top Navigation */}
-      <Navbar />
+      <Navbar activeTab={activeTab} setActiveTab={setActiveTab} toggleMobileMenu={() => setIsMobileMenuOpen(!isMobileMenuOpen)} />
 
       {/* Main Container */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} mobileOpen={isMobileMenuOpen} setMobileOpen={setIsMobileMenuOpen} />
 
         {/* Content View */}
-        <main className="flex-1 overflow-y-auto bg-stone-950 pb-16 md:pb-0">
+        <main className="flex-1 overflow-y-auto bg-stone-950 pb-20 md:pb-0">
           {activeTab === 'pos' && <POSScreen />}
           {activeTab === 'dashboard' && <AdminDashboard />}
           {activeTab === 'inventory' && <InventoryManagement />}
