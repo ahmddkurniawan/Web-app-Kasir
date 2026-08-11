@@ -28,6 +28,7 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatar, setEditAvatar] = useState('');
+  const [viewingAvatar, setViewingAvatar] = useState(false);
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
@@ -290,11 +291,12 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
               <div className="flex items-center space-x-4 p-3 rounded-xl bg-stone-800/60 border border-stone-700/50">
                 <div className="relative group">
                   <img
-                    src={(editAvatar === 'remove' ? '' : editAvatar) || user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                    src={editAvatar === 'remove' ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' : (editAvatar || user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80')}
                     alt={user?.name || 'User'}
-                    className="w-14 h-14 rounded-full border-2 border-amber-600/60 object-cover"
+                    className="w-14 h-14 rounded-full border-2 border-amber-600/60 object-cover cursor-pointer hover:border-amber-400 transition-colors"
+                    onClick={() => setViewingAvatar(true)}
                   />
-                  {((editAvatar === 'remove' ? '' : editAvatar) || user?.avatarUrl) && (
+                  {(editAvatar === 'remove' ? false : (editAvatar || user?.avatarUrl)) && (
                     <button
                       onClick={handleDeleteAvatar}
                       className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
@@ -431,6 +433,30 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
           </div>
         </div>
       )}
+      {/* ===== Avatar Full Preview Modal ===== */}
+      {viewingAvatar && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-sm"
+          onClick={() => setViewingAvatar(false)}
+        >
+          <div className="relative max-w-2xl w-full flex justify-center">
+            <button
+              onClick={() => setViewingAvatar(false)}
+              className="absolute -top-12 right-0 p-2 text-stone-400 hover:text-white transition-colors"
+            >
+              <X className="w-8 h-8" />
+            </button>
+            <img
+              src={editAvatar === 'remove' ? 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80' : (editAvatar || user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80')}
+              alt={user?.name || 'User'}
+              className="w-auto h-auto max-h-[80vh] rounded-2xl border-4 border-stone-800 object-contain shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
+        </div>
+      )}
     </>
   );
 };
+
+
