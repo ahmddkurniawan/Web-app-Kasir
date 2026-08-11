@@ -6,8 +6,7 @@ interface AuthContextType {
   role: UserRole | null;
   login: (username: string, userObj: User) => void;
   logout: () => void;
-  updateProfile: (newName: string) => Promise<void>;
-  updateAvatar: (base64: string) => Promise<void>;
+  updateProfile: (newName: string, newAvatarUrl?: string) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -68,35 +67,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('ngopay_session_user');
   };
 
-  const updateProfile = async (newName: string) => {
+  const updateProfile = async (newName: string, newAvatarUrl?: string) => {
     if (!user) return;
     const updatedUser = { ...user, name: newName };
+    if (newAvatarUrl !== undefined) {
+      updatedUser.avatarUrl = newAvatarUrl;
+    }
     setUser(updatedUser);
     localStorage.setItem('ngopay_session_user', JSON.stringify(updatedUser));
 
     if (navigator.onLine && !updatedUser.id.startsWith('usr-admin-') && !updatedUser.id.startsWith('usr-owner-')) {
       try {
         const { supabase } = await import('../services/supabase');
-        await supabase.from('users').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', updatedUser.id);
+        const updateData: any = { name: newName, updated_at: new Date().toISOString() };
+        if (newAvatarUrl !== undefined) {
+          updateData.avatar_url = newAvatarUrl;
+        }
+        await supabase.from('users').update(updateData).eq('id', updatedUser.id);
       } catch (err) {
         console.error('Failed to update profile to Supabase', err);
-      }
-    }
-  };
-
-  const updateAvatar = async (base64: string) => {
-    if (!user) return;
-    const updatedUser = { ...user, avatarUrl: base64 };
-    setUser(updatedUser);
-    localStorage.setItem('ngopay_session_user', JSON.stringify(updatedUser));
-
-    // Sync to Supabase if online (skip demo accounts)
-    if (navigator.onLine && !updatedUser.id.startsWith('usr-admin-') && !updatedUser.id.startsWith('usr-owner-')) {
-      try {
-        const { supabase } = await import('../services/supabase');
-        await supabase.from('users').update({ avatar_url: base64, updated_at: new Date().toISOString() }).eq('id', updatedUser.id);
-      } catch (err) {
-        console.error('Failed to sync avatar to Supabase', err);
       }
     }
   };
@@ -109,7 +98,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         updateProfile,
-        updateAvatar,
         isAuthenticated: !!user,
       }}
     >
