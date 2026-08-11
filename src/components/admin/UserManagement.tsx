@@ -104,10 +104,9 @@ export const UserManagement: React.FC = () => {
 
     setSaving(true);
     try {
-      const now = new Date().toISOString();
       if (isAddingNew) {
         const newId = `usr-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
-        const { error } = await supabase.from('users').insert({
+        const insertRow: Record<string, unknown> = {
           id: newId,
           username: formData.username!.toLowerCase().trim(),
           name: formData.name!.trim(),
@@ -115,15 +114,13 @@ export const UserManagement: React.FC = () => {
           role: formData.role || 'ADMIN',
           avatar_url: defaultAvatar(formData.role || 'ADMIN'),
           password: formData.password!,
-          created_at: now,
-          updated_at: now,
-        });
+        };
+        const { error } = await supabase.from('users').insert(insertRow);
         if (error) throw new Error(error.message);
       } else if (editingUser) {
         const row: Record<string, unknown> = {
           name: formData.name!.trim(),
           email: formData.email?.trim() || '',
-          updated_at: now,
         };
         if (role === 'OWNER') {
           row.role = formData.role || editingUser.role;

@@ -79,7 +79,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (navigator.onLine && !updatedUser.id.startsWith('usr-admin-') && !updatedUser.id.startsWith('usr-owner-')) {
       try {
         const { supabase } = await import('../services/supabase');
-        const updateData: any = { name: newName, updated_at: new Date().toISOString() };
+        const updateData: any = { name: newName };
         if (newAvatarUrl !== undefined) {
           updateData.avatar_url = newAvatarUrl === 'remove' ? null : newAvatarUrl;
         }
