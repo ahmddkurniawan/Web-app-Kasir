@@ -31,12 +31,18 @@ export const POSScreen: React.FC = () => {
   useEffect(() => {
     loadCatalog();
     
-    // Listen for real-time updates from Supabase
     const handleRealtimeUpdate = () => {
       loadCatalog();
     };
     
-    // Listen for edit-transaction event
+    window.addEventListener('realtime-update', handleRealtimeUpdate);
+    
+    return () => {
+      window.removeEventListener('realtime-update', handleRealtimeUpdate);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleEditTransaction = (e: Event) => {
       const customEvent = e as CustomEvent<Transaction>;
       const trx = customEvent.detail;
@@ -61,14 +67,12 @@ export const POSScreen: React.FC = () => {
       window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'pos' }));
     };
 
-    window.addEventListener('realtime-update', handleRealtimeUpdate);
     window.addEventListener('edit-transaction', handleEditTransaction);
     
     return () => {
-      window.removeEventListener('realtime-update', handleRealtimeUpdate);
       window.removeEventListener('edit-transaction', handleEditTransaction);
     };
-  }, [products]); // Re-bind when products change so the edit handler has the latest catalog
+  }, [products]);
 
   const loadCatalog = async () => {
     setLoading(true);
