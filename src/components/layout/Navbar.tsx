@@ -4,7 +4,7 @@ import { useSync } from '../../context/SyncContext';
 import { getDeviceName, setDeviceName } from '../../utils/device';
 import {
   Wifi, WifiOff, RefreshCw, LogOut, Coffee, Smartphone,
-  Edit2, Check, X, User, Save, CheckCircle2
+  Edit2, Check, X, User, Save, CheckCircle2, UploadCloud
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -26,9 +26,11 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatar, setEditAvatar] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // When modal opens, pre-fill current name and focus input
   useEffect(() => {
@@ -39,6 +41,44 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
       setTimeout(() => inputRef.current?.focus(), 100);
     }
   }, [showProfileModal, user?.name, user?.avatarUrl]);
+
+  const processImageFile = (file: File) => {
+    if (!file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 250;
+        const MAX_HEIGHT = 250;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setEditAvatar(dataUrl);
+      };
+      img.src = e.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  };
 
   const handleSyncClick = async () => {
     setIsSyncing(true);
@@ -281,20 +321,41 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
                 />
               </div>
 
-              {/* Avatar URL input */}
+              {/* Avatar Drag n Drop input */}
               <div>
                 <label className="block text-xs font-semibold text-stone-400 mb-1.5">
-                  URL Foto Profil
+                  Foto Profil
                 </label>
-                <input
-                  type="text"
-                  id="profile-avatar-input"
-                  value={editAvatar}
-                  onChange={(e) => setEditAvatar(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="https://example.com/photo.jpg"
-                  className="w-full px-3 py-2.5 bg-stone-800 border border-stone-600 rounded-xl text-stone-100 text-sm placeholder-stone-500 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/40 transition-colors"
-                />
+                <div
+                  className={`w-full p-4 border-2 border-dashed rounded-xl text-center transition-colors cursor-pointer ${
+                    isDragging ? 'border-amber-500 bg-amber-500/10' : 'border-stone-600 hover:border-stone-500 bg-stone-800'
+                  }`}
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    const file = e.dataTransfer.files[0];
+                    if (file) processImageFile(file);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <UploadCloud className={`w-6 h-6 mx-auto mb-2 ${isDragging ? 'text-amber-500' : 'text-stone-400'}`} />
+                  <p className="text-xs text-stone-300">
+                    <span className="text-amber-400 font-semibold">Klik untuk upload</span> atau drag & drop
+                  </p>
+                  <p className="text-[10px] text-stone-500 mt-1">PNG, JPG dsb (otomatis di-resize)</p>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) processImageFile(file);
+                    }}
+                  />
+                </div>
                 <p className="text-[11px] text-stone-500 mt-1.5">
                   💾 Tersimpan di perangkat ini — sinkron otomatis saat online
                 </p>
