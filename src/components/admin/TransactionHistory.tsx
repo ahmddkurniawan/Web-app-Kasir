@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { transactionService } from '../../services/api';
+import { transactionService, mapTransaction } from '../../services/api';
 import { Transaction } from '../../types';
 import { formatRupiah } from '../../utils/device';
 import { ReceiptModal } from '../pos/ReceiptModal';
 import { Search, Printer, Receipt, CheckCircle, Clock } from 'lucide-react';
+import { supabase } from '../../services/supabase';
+import { db } from '../../db/indexedDB';
 
 export const TransactionHistory: React.FC = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -13,10 +15,39 @@ export const TransactionHistory: React.FC = () => {
 
   useEffect(() => {
     loadTransactions();
+
+    const handleRealtimeUpdate = () => {
+      loadTransactions();
+    };
+    window.addEventListener('realtime-update', handleRealtimeUpdate);
+    return () => {
+      window.removeEventListener('realtime-update', handleRealtimeUpdate);
+    };
   }, []);
 
   const loadTransactions = async () => {
     setLoading(true);
+    // If online, fetch from Supabase (all devices' synced transactions)
+    if (navigator.onLine) {
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .order('transaction_date', { ascending: false });
+        if (!error && data) {
+          const serverTrxs = data.map(mapTransaction);
+          // Merge into local IndexedDB without overwriting pending local ones
+          for (const trx of serverTrxs) {
+            const existing = await db.transactions.get(trx.localId);
+            if (!existing || existing.syncStatus !== 'pending') {
+              await db.transactions.put(trx);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Falling back to local transactions:', err);
+      }
+    }
     const list = await transactionService.getLocalTransactions();
     setTransactions(list);
     setLoading(false);

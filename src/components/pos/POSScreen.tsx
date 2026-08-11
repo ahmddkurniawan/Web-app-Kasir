@@ -30,6 +30,16 @@ export const POSScreen: React.FC = () => {
 
   useEffect(() => {
     loadCatalog();
+    
+    // Listen for real-time updates from Supabase
+    const handleRealtimeUpdate = () => {
+      loadCatalog();
+    };
+    window.addEventListener('realtime-update', handleRealtimeUpdate);
+    
+    return () => {
+      window.removeEventListener('realtime-update', handleRealtimeUpdate);
+    };
   }, []);
 
   const loadCatalog = async () => {

@@ -42,6 +42,16 @@ const MainLayout: React.FC = () => {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
   }, []);
 
+  // Listen for in-app navigation events dispatched by child components
+  useEffect(() => {
+    const handleNavigateTab = (e: Event) => {
+      const tab = (e as CustomEvent).detail;
+      if (tab) setActiveTab(tab);
+    };
+    window.addEventListener('navigate-tab', handleNavigateTab);
+    return () => window.removeEventListener('navigate-tab', handleNavigateTab);
+  }, []);
+
   const handleInstallPWA = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();

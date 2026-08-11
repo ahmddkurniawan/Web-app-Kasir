@@ -279,7 +279,7 @@ export const ownerService = {
 };
 
 // Helpers to map Supabase snake_case to TS camelCase
-function mapProduct(row: any): Product {
+export function mapProduct(row: any): Product {
   return {
     id: row.id,
     sku: row.sku,

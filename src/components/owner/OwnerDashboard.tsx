@@ -33,8 +33,18 @@ export const OwnerDashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
-    const interval = setInterval(loadData, 15000); // Live poll analytics
-    return () => clearInterval(interval);
+    // Keep polling as fallback in case Realtime is not yet enabled for the table
+    const interval = setInterval(loadData, 15000);
+
+    const handleRealtimeUpdate = () => {
+      loadData();
+    };
+    window.addEventListener('realtime-update', handleRealtimeUpdate);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('realtime-update', handleRealtimeUpdate);
+    };
   }, []);
 
   const loadData = async () => {

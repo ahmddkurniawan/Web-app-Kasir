@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSync } from '../../context/SyncContext';
-import { transactionService } from '../../services/api';
+import { transactionService, mapTransaction } from '../../services/api';
 import { Transaction } from '../../types';
 import { formatRupiah } from '../../utils/device';
 import { ShoppingBag, DollarSign, Package, ShoppingCart, RefreshCw, Wifi, WifiOff, Clock } from 'lucide-react';
+import { supabase } from '../../services/supabase';
+import { db } from '../../db/indexedDB';
 
 interface AdminDashboardProps {
-  onStartPOS: () => void;
+  onStartPOS?: () => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onStartPOS }) => {
@@ -18,10 +20,39 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onStartPOS }) =>
 
   useEffect(() => {
     loadTransactions();
+
+    const handleRealtimeUpdate = () => {
+      loadTransactions();
+    };
+    window.addEventListener('realtime-update', handleRealtimeUpdate);
+    
+    return () => {
+      window.removeEventListener('realtime-update', handleRealtimeUpdate);
+    };
   }, []);
 
   const loadTransactions = async () => {
     setLoading(true);
+    // Fetch all synced transactions from Supabase (from all devices) when online
+    if (navigator.onLine) {
+      try {
+        const { data, error } = await supabase
+          .from('transactions')
+          .select('*')
+          .order('transaction_date', { ascending: false });
+        if (!error && data) {
+          const serverTrxs = data.map(mapTransaction);
+          for (const trx of serverTrxs) {
+            const existing = await db.transactions.get(trx.localId);
+            if (!existing || existing.syncStatus !== 'pending') {
+              await db.transactions.put(trx);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Falling back to local transactions:', err);
+      }
+    }
     const list = await transactionService.getLocalTransactions();
     const todayStr = new Date().toISOString().slice(0, 10);
     const filteredToday = list.filter(t => t.transactionDate.startsWith(todayStr));
@@ -76,7 +107,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onStartPOS }) =>
           </div>
 
           <button
-            onClick={onStartPOS}
+            onClick={() => {
+              if (onStartPOS) {
+                onStartPOS();
+              } else {
+                window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'pos' }));
+              }
+            }}
             className="px-5 py-3 bg-amber-600 hover:bg-amber-500 text-white font-extrabold rounded-xl shadow-lg shadow-amber-950/50 flex items-center space-x-2 transition-all active:scale-95 text-xs tracking-wider"
           >
             <ShoppingCart className="w-4 h-4" />

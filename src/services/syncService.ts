@@ -2,6 +2,7 @@ import { db } from '../db/indexedDB';
 import { getDeviceId, getDeviceName } from '../utils/device';
 import { Transaction } from '../types';
 import { supabase } from './supabase';
+import { mapProduct, mapTransaction } from './api';
 
 export type SyncState = 'ONLINE' | 'OFFLINE' | 'SYNCING';
 
@@ -24,6 +25,36 @@ class SyncManager {
         }
       }, 20000);
     }
+  }
+
+  public subscribeToRealtime() {
+    if (typeof window === 'undefined') return;
+
+    // Listen to changes on 'products' table
+    supabase.channel('public:products')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async (payload) => {
+        if (payload.new) {
+          const prod = mapProduct(payload.new);
+          await db.products.put(prod);
+          window.dispatchEvent(new Event('realtime-update'));
+        }
+      })
+      .subscribe();
+
+    // Listen to changes on 'transactions' table
+    supabase.channel('public:transactions')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, async (payload) => {
+        if (payload.new) {
+          const trx = mapTransaction(payload.new);
+          const existing = await db.transactions.get(trx.localId);
+          // Prevent overwriting pending local transactions from this device
+          if (!existing || existing.syncStatus !== 'pending') {
+            await db.transactions.put(trx);
+            window.dispatchEvent(new Event('realtime-update'));
+          }
+        }
+      })
+      .subscribe();
   }
 
   public subscribe(listener: SyncListener): () => void {

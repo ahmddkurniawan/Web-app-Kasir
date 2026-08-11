@@ -14,6 +14,9 @@ export const SyncProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [pendingCount, setPendingCount] = useState<number>(0);
 
   useEffect(() => {
+    // Initiate realtime subscriptions
+    syncManager.subscribeToRealtime();
+
     const unsubscribe = syncManager.subscribe((state, count) => {
       setSyncState(state);
       setPendingCount(count);
