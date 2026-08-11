@@ -136,7 +136,7 @@ export const TransactionHistory: React.FC = () => {
                         {formatRupiah(t.total)}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        {t.syncStatus === 'SYNCED' ? (
+                        {t.syncStatus === 'synced' ? (
                           <span className="inline-flex items-center space-x-1 text-emerald-400 font-bold text-[10px]">
                             <CheckCircle className="w-3.5 h-3.5" />
                             <span>SYNCED</span>
