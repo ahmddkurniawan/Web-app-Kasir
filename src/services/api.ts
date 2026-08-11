@@ -156,11 +156,32 @@ export const transactionService = {
   },
 
   async getLocalTransactions(): Promise<Transaction[]> {
-    return await db.transactions.reverse().sortBy('transactionDate');
+    const all = await db.transactions.reverse().sortBy('transactionDate');
+    return all.filter(t => !t.isDeleted);
   },
 
   async getPendingTransactions(): Promise<Transaction[]> {
     return await db.transactions.where('syncStatus').equals('pending').or('syncStatus').equals('failed').toArray();
+  },
+
+  async deleteTransaction(localId: string): Promise<boolean> {
+    const trx = await db.transactions.get(localId);
+    if (!trx) return false;
+
+    // Restore stock
+    if (Array.isArray(trx.items)) {
+      for (const item of trx.items) {
+        const prod = await db.products.get(item.productId);
+        if (prod) {
+          const newStock = prod.stock + item.quantity;
+          await db.products.update(prod.id, { stock: newStock, updatedAt: new Date().toISOString() });
+        }
+      }
+    }
+
+    // Mark as deleted for sync service to handle
+    await db.transactions.update(localId, { isDeleted: true, syncStatus: 'pending' });
+    return true;
   }
 };
 

@@ -85,6 +85,7 @@ export interface Transaction {
   createdAt: string;
   syncedAt?: string;
   syncError?: string;
+  isDeleted?: boolean;
 }
 
 export interface InventoryMovement {

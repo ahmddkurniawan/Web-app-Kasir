@@ -3,7 +3,7 @@ import { transactionService, mapTransaction } from '../../services/api';
 import { Transaction } from '../../types';
 import { formatRupiah } from '../../utils/device';
 import { ReceiptModal } from '../pos/ReceiptModal';
-import { Search, Printer, Receipt, CheckCircle, Clock } from 'lucide-react';
+import { Search, Printer, Receipt, CheckCircle, Clock, Trash2, Edit } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import { db } from '../../db/indexedDB';
 
@@ -12,6 +12,7 @@ export const TransactionHistory: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     loadTransactions();
@@ -34,23 +35,44 @@ export const TransactionHistory: React.FC = () => {
           .from('transactions')
           .select('*')
           .order('transaction_date', { ascending: false });
+        
         if (!error && data) {
-          const serverTrxs = data.map(mapTransaction);
-          // Merge into local IndexedDB without overwriting pending local ones
-          for (const trx of serverTrxs) {
-            const existing = await db.transactions.get(trx.localId);
-            if (!existing || existing.syncStatus !== 'pending') {
-              await db.transactions.put(trx);
+          const remoteList = data.map(mapTransaction);
+          const localList = await transactionService.getLocalTransactions();
+          
+          const localMap = new Map(localList.map(t => [t.localId, t]));
+          
+          for (const rt of remoteList) {
+            if (!localMap.has(rt.localId)) {
+              await db.transactions.put(rt);
             }
           }
         }
       } catch (err) {
-        console.warn('Falling back to local transactions:', err);
+        console.error('Error fetching remote transactions:', err);
       }
     }
-    const list = await transactionService.getLocalTransactions();
-    setTransactions(list);
+    const finalLocalList = await transactionService.getLocalTransactions();
+    setTransactions(finalLocalList);
     setLoading(false);
+  };
+
+  const handleEdit = async (trx: Transaction) => {
+    if (window.confirm('Membuka mode Edit akan MENGHAPUS (Void) transaksi ini dan mengembalikannya ke layar Kasir. Lanjutkan?')) {
+      const success = await transactionService.deleteTransaction(trx.localId);
+      if (success) {
+        window.dispatchEvent(new CustomEvent('edit-transaction', { detail: trx }));
+      }
+    }
+  };
+
+  const handleDelete = async (trx: Transaction) => {
+    const success = await transactionService.deleteTransaction(trx.localId);
+    if (success) {
+      setDeleteConfirmId(null);
+      loadTransactions();
+      window.dispatchEvent(new Event('realtime-update')); // trigger sync/refresh
+    }
   };
 
   const filteredTransactions = transactions.filter((t) => {
@@ -113,7 +135,7 @@ export const TransactionHistory: React.FC = () => {
                     <th className="py-3 px-3">Metode</th>
                     <th className="py-3 px-3 text-right">Total</th>
                     <th className="py-3 px-3 text-center">Sync Status</th>
-                    <th className="py-3 px-3 text-center">Cetak</th>
+                    <th className="py-3 px-3 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-stone-800/60 font-mono">
@@ -149,13 +171,29 @@ export const TransactionHistory: React.FC = () => {
                         )}
                       </td>
                       <td className="py-3 px-3 text-center">
-                        <button
-                          onClick={() => setSelectedTransaction(t)}
-                          className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-[10px] inline-flex items-center space-x-1 shadow-md transition-colors"
-                        >
-                          <Printer className="w-3 h-3" />
-                          <span>Struk</span>
-                        </button>
+                        <div className="flex items-center justify-center space-x-2">
+                          <button
+                            onClick={() => setSelectedTransaction(t)}
+                            title="Cetak Struk"
+                            className="p-1.5 rounded-md bg-stone-800 hover:bg-stone-700 text-stone-300 hover:text-white transition-colors"
+                          >
+                            <Printer className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleEdit(t)}
+                            title="Edit Transaksi"
+                            className="p-1.5 rounded-md bg-stone-800 hover:bg-amber-600/20 text-amber-500 hover:text-amber-400 transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmId(t.localId)}
+                            title="Void / Hapus"
+                            className="p-1.5 rounded-md bg-stone-800 hover:bg-rose-500/20 text-rose-500 hover:text-rose-400 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -174,7 +212,7 @@ export const TransactionHistory: React.FC = () => {
                         {new Date(t.transactionDate).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })} • {t.adminName}
                       </div>
                     </div>
-                    {t.syncStatus === 'SYNCED' ? (
+                    {t.syncStatus === 'synced' ? (
                       <span className="px-2 py-0.5 rounded-full bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] font-bold flex items-center space-x-1">
                         <CheckCircle className="w-3 h-3" />
                         <span>SYNCED</span>
@@ -200,13 +238,29 @@ export const TransactionHistory: React.FC = () => {
                         {formatRupiah(t.total)}
                       </span>
                     </div>
-                    <button
-                      onClick={() => setSelectedTransaction(t)}
-                      className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] inline-flex items-center space-x-1.5 shadow-md transition-colors"
-                    >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>Cetak</span>
-                    </button>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEdit(t)}
+                        title="Edit"
+                        className="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-amber-600/20 text-amber-500 hover:text-amber-400 font-bold text-[11px] inline-flex items-center space-x-1.5 shadow-md transition-colors"
+                      >
+                        <Edit className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmId(t.localId)}
+                        title="Hapus"
+                        className="px-2.5 py-1.5 rounded-lg bg-stone-800 hover:bg-rose-500/20 text-rose-500 hover:text-rose-400 font-bold text-[11px] inline-flex items-center space-x-1.5 shadow-md transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setSelectedTransaction(t)}
+                        className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-500 text-white font-bold text-[11px] inline-flex items-center space-x-1.5 shadow-md transition-colors"
+                      >
+                        <Printer className="w-3.5 h-3.5" />
+                        <span>Cetak</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -221,6 +275,36 @@ export const TransactionHistory: React.FC = () => {
           transaction={selectedTransaction}
           onClose={() => setSelectedTransaction(null)}
         />
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmId && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-stone-900 border border-stone-800 p-6 rounded-2xl w-full max-w-sm">
+            <h3 className="text-lg font-bold text-rose-500 mb-2">Void / Hapus Transaksi?</h3>
+            <p className="text-sm text-stone-300 mb-6">
+              Tindakan ini tidak dapat dibatalkan. Stok barang akan otomatis dikembalikan (direstock). 
+              Pastikan tindakan ini disetujui.
+            </p>
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                className="flex-1 px-4 py-2 bg-stone-800 hover:bg-stone-700 text-stone-200 rounded-lg font-bold transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                onClick={() => {
+                  const t = transactions.find(x => x.localId === deleteConfirmId);
+                  if (t) handleDelete(t);
+                }}
+                className="flex-1 px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-lg font-bold transition-colors"
+              >
+                Ya, Hapus
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>

@@ -35,12 +35,40 @@ export const POSScreen: React.FC = () => {
     const handleRealtimeUpdate = () => {
       loadCatalog();
     };
+    
+    // Listen for edit-transaction event
+    const handleEditTransaction = (e: Event) => {
+      const customEvent = e as CustomEvent<Transaction>;
+      const trx = customEvent.detail;
+      
+      const newCart: CartItem[] = trx.items.map(item => {
+        const prod = products.find(p => p.id === item.productId);
+        return {
+          product: prod || { 
+            id: item.productId, 
+            name: item.productName, 
+            price: item.price, 
+            category: item.category, 
+            stock: 999 
+          } as Product,
+          quantity: item.quantity,
+          subtotal: item.subtotal
+        };
+      });
+      
+      setCart(newCart);
+      setDiscountAmount(trx.discount || 0);
+      window.dispatchEvent(new CustomEvent('navigate-tab', { detail: 'pos' }));
+    };
+
     window.addEventListener('realtime-update', handleRealtimeUpdate);
+    window.addEventListener('edit-transaction', handleEditTransaction);
     
     return () => {
       window.removeEventListener('realtime-update', handleRealtimeUpdate);
+      window.removeEventListener('edit-transaction', handleEditTransaction);
     };
-  }, []);
+  }, [products]); // Re-bind when products change so the edit handler has the latest catalog
 
   const loadCatalog = async () => {
     setLoading(true);

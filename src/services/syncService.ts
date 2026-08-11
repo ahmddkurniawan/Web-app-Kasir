@@ -133,6 +133,39 @@ class SyncManager {
 
       for (const trx of pendingTransactions) {
         try {
+          if (trx.isDeleted) {
+            // Delete from Supabase
+            const { error } = await supabase.from('transactions').delete().eq('local_id', trx.localId);
+            if (error) throw new Error(error.message);
+
+            // Re-stock in Supabase
+            if (Array.isArray(trx.items)) {
+              for (const item of trx.items) {
+                const { data: prod } = await supabase.from('products').select('stock').eq('id', item.productId).single();
+                if (prod) {
+                  const newStock = prod.stock + item.quantity;
+                  await supabase.from('products').update({ stock: newStock, updated_at: new Date().toISOString() }).eq('id', item.productId);
+                  await supabase.from('inventory_movements').insert({
+                    id: `mov-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+                    product_id: item.productId,
+                    product_name: item.productName,
+                    type: 'RESTOCK',
+                    quantity: item.quantity,
+                    previous_stock: prod.stock,
+                    new_stock: newStock,
+                    reason: `Void transaksi (${trx.transactionNumber})`,
+                    admin_name: trx.adminName,
+                    timestamp: new Date().toISOString(),
+                  });
+                }
+              }
+            }
+            // Remove from IndexedDB
+            await db.transactions.delete(trx.localId);
+            syncedCount++;
+            continue;
+          }
+
           const serverId = `srv-trx-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
           const row = {
             local_id: trx.localId,
