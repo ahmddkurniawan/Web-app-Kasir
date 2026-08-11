@@ -16,15 +16,70 @@ export const LoginForm: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      // Simulate network delay for realistic feel
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 500)); // Simulate delay
 
-      if (username.toLowerCase() === 'owner') {
-        login('owner');
-      } else if (username.toLowerCase() === 'admin' || username.toLowerCase() === 'kasir') {
-        login('admin');
+      const uname = username.toLowerCase().trim();
+      let matchedUser = null;
+
+      // 1. Try Online Supabase Auth
+      if (navigator.onLine) {
+        try {
+          const { supabase } = await import('../../services/supabase');
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('username', uname)
+            .eq('password', password)
+            .single();
+
+          if (data) {
+            matchedUser = {
+              id: data.id,
+              name: data.name,
+              username: data.username,
+              role: data.role,
+              avatarUrl: data.avatar_url || ''
+            };
+          }
+        } catch (dbErr) {
+          console.error('Supabase login check failed:', dbErr);
+        }
+      }
+
+      // 2. Try Offline Cache Auth (if online failed or offline)
+      if (!matchedUser) {
+        const cachedStr = localStorage.getItem('ngopay_users_cache');
+        if (cachedStr) {
+          const cachedUsers = JSON.parse(cachedStr);
+          const found = cachedUsers.find((u: any) => u.username === uname && u.password === password);
+          if (found) {
+            matchedUser = {
+              id: found.id,
+              name: found.name,
+              username: found.username,
+              role: found.role,
+              avatarUrl: found.avatarUrl || ''
+            };
+          }
+        }
+      }
+
+      // 3. Fallback to Demo Users (if custom users not found)
+      if (!matchedUser) {
+        if (uname === 'owner' && password === 'password123') {
+          login('owner');
+          return;
+        } else if ((uname === 'admin' || uname === 'kasir') && password === 'password123') {
+          login('admin');
+          return;
+        }
+      }
+
+      // If user found dynamically
+      if (matchedUser) {
+        login(matchedUser.username, matchedUser);
       } else {
-        setErrorMsg('Login gagal. Silakan coba username "admin" atau "owner".');
+        setErrorMsg('Login gagal. Username atau password salah.');
       }
     } catch {
       setErrorMsg('Terjadi kesalahan sistem.');
