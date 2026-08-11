@@ -12,6 +12,7 @@ class SyncManager {
   private currentState: SyncState = navigator.onLine ? 'ONLINE' : 'OFFLINE';
   private listeners: Set<SyncListener> = new Set();
   private isSyncingInProgress = false;
+  private offlineTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
     if (typeof window !== 'undefined') {
@@ -83,12 +84,31 @@ class SyncManager {
   }
 
   private handleOnlineChange(isOnline: boolean) {
-    this.currentState = isOnline ? 'ONLINE' : 'OFFLINE';
-    this.notify();
     if (isOnline) {
-      this.triggerSync();
-      this.sendHeartbeat();
-      window.dispatchEvent(new Event('realtime-update'));
+      // Cancel any pending offline timer (came back before debounce fired)
+      if (this.offlineTimer) {
+        clearTimeout(this.offlineTimer);
+        this.offlineTimer = null;
+      }
+      // Only update if we were OFFLINE before
+      if (this.currentState === 'OFFLINE') {
+        this.currentState = 'ONLINE';
+        this.notify();
+        this.triggerSync();
+        this.sendHeartbeat();
+        window.dispatchEvent(new Event('realtime-update'));
+      }
+    } else {
+      // Debounce: only switch to OFFLINE after 2 seconds to avoid false positives
+      if (this.offlineTimer) return; // already waiting
+      this.offlineTimer = setTimeout(() => {
+        this.offlineTimer = null;
+        // Re-check: don't switch if actually online now
+        if (!navigator.onLine) {
+          this.currentState = 'OFFLINE';
+          this.notify();
+        }
+      }, 2000);
     }
   }
 
@@ -104,8 +124,7 @@ class SyncManager {
     }
 
     this.isSyncingInProgress = true;
-    this.currentState = 'SYNCING';
-    this.notify();
+    // Don't notify SYNCING yet — wait until we know there's something to sync
 
     try {
       const pendingTransactions = await db.transactions
@@ -116,15 +135,16 @@ class SyncManager {
         .toArray();
 
       if (pendingTransactions.length === 0) {
+        // Nothing to sync — reset silently, no SYNCING flash
         this.currentState = 'ONLINE';
         this.isSyncingInProgress = false;
         this.notify();
         return { success: true, syncedCount: 0, message: 'Semua transaksi sudah tersinkron' };
       }
 
-      for (const trx of pendingTransactions) {
-        await db.transactions.update(trx.localId, { syncStatus: 'syncing' });
-      }
+      // Only now show SYNCING state when there is actually something to sync
+      this.currentState = 'SYNCING';
+      this.notify();
 
       const deviceId = getDeviceId();
       const deviceName = getDeviceName();

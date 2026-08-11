@@ -14,6 +14,7 @@ import { ProductAnalytics } from './components/owner/ProductAnalytics';
 import { AdminPerformance } from './components/owner/AdminPerformance';
 import { ProductManagement } from './components/owner/ProductManagement';
 import { DeviceMonitoring } from './components/owner/DeviceMonitoring';
+import { UserManagement } from './components/admin/UserManagement';
 import { Download, RefreshCw, WifiOff } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
@@ -121,6 +122,7 @@ const MainLayout: React.FC = () => {
           {activeTab === 'device-monitoring' && <DeviceMonitoring />}
           {activeTab === 'product-management' && <ProductManagement />}
           {activeTab === 'all-transactions' && <TransactionHistory />}
+          {activeTab === 'users' && <UserManagement />}
         </main>
       </div>
 

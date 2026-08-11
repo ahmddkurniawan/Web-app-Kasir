@@ -10,7 +10,8 @@ import {
   Users, 
   Smartphone, 
   Coffee,
-  X
+  X,
+  UserCog
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -38,6 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'pos', label: 'Kasir POS', icon: ShoppingCart },
     { id: 'transactions', label: 'Riwayat Transaksi', icon: Receipt },
     { id: 'inventory', label: 'Stok Produk', icon: Package },
+    { id: 'users', label: 'Manajemen Pengguna', icon: UserCog },
   ];
 
   const ownerNav = [
@@ -49,6 +51,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'product-management', label: 'Kelola Produk', icon: Coffee },
     { id: 'inventory', label: 'Manajemen Stok', icon: Package },
     { id: 'all-transactions', label: 'Semua Transaksi', icon: Receipt },
+    { id: 'users', label: 'Manajemen Pengguna', icon: UserCog },
   ];
 
   const navItems = role === 'OWNER' ? ownerNav : adminNav;
