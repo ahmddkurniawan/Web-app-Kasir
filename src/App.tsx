@@ -18,7 +18,7 @@ import { Download, RefreshCw, WifiOff } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
   const { user } = useAuth();
-  const { isOnline, pendingCount } = useSync();
+  const { syncState, pendingCount } = useSync();
   const [activeTab, setActiveTab] = useState<string>('pos');
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -69,13 +69,13 @@ const MainLayout: React.FC = () => {
     <div className="min-h-screen bg-stone-950 text-stone-100 flex flex-col font-sans selection:bg-amber-600 selection:text-white">
       
       {/* Offline Alert Strip */}
-      {!isOnline && (
-        <div className="bg-amber-600 text-stone-950 px-4 py-2 text-xs font-black flex items-center justify-between shadow-md">
+      {syncState === 'OFFLINE' && (
+        <div className="bg-amber-600 text-stone-950 px-4 py-3 sm:py-2 text-xs font-black flex flex-col sm:flex-row items-center justify-between shadow-md gap-2 text-center sm:text-left">
           <div className="flex items-center space-x-2">
-            <WifiOff className="w-4 h-4 text-stone-950 animate-pulse" />
-            <span>MODE OFFLINE AKTIF: Kasir tetap beroperasi normal! Ada {pendingCount} transaksi tersimpan lokal.</span>
+            <WifiOff className="w-4 h-4 shrink-0 text-stone-950 animate-pulse" />
+            <span className="leading-tight">MODE OFFLINE AKTIF: Kasir beroperasi normal. {pendingCount > 0 ? `${pendingCount} transaksi tersimpan lokal.` : ''}</span>
           </div>
-          <span className="text-[10px] uppercase font-mono tracking-widest bg-stone-950 text-amber-400 px-2 py-0.5 rounded">
+          <span className="text-[10px] uppercase font-mono tracking-widest bg-stone-950 text-amber-400 px-2 py-0.5 rounded whitespace-nowrap">
             Auto Sync saat Online
           </span>
         </div>

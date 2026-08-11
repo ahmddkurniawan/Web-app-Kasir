@@ -88,6 +88,7 @@ class SyncManager {
     if (isOnline) {
       this.triggerSync();
       this.sendHeartbeat();
+      window.dispatchEvent(new Event('realtime-update'));
     }
   }
 
@@ -200,6 +201,10 @@ class SyncManager {
       this.currentState = 'ONLINE';
       this.isSyncingInProgress = false;
       this.notify();
+      
+      if (syncedCount > 0 && typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('realtime-update'));
+      }
 
       return {
         success: true,
