@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     const updatedUser = { ...user, name: newName };
     if (newAvatarUrl !== undefined) {
-      updatedUser.avatarUrl = newAvatarUrl;
+      updatedUser.avatarUrl = newAvatarUrl === 'remove' ? '' : newAvatarUrl;
     }
     setUser(updatedUser);
     localStorage.setItem('ngopay_session_user', JSON.stringify(updatedUser));
@@ -81,7 +81,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { supabase } = await import('../services/supabase');
         const updateData: any = { name: newName, updated_at: new Date().toISOString() };
         if (newAvatarUrl !== undefined) {
-          updateData.avatar_url = newAvatarUrl;
+          updateData.avatar_url = newAvatarUrl === 'remove' ? null : newAvatarUrl;
         }
         await supabase.from('users').update(updateData).eq('id', updatedUser.id);
       } catch (err) {

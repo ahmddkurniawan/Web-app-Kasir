@@ -2,9 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useSync } from '../../context/SyncContext';
 import { getDeviceName, setDeviceName } from '../../utils/device';
+import Cropper from 'react-easy-crop';
+import { getCroppedImg } from '../../utils/cropImage';
 import {
   Wifi, WifiOff, RefreshCw, LogOut, Coffee, Smartphone,
-  Edit2, Check, X, User, Save, CheckCircle2, UploadCloud
+  Edit2, Check, X, User, Save, CheckCircle2, UploadCloud, Trash2
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -26,6 +28,10 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [editName, setEditName] = useState('');
   const [editAvatar, setEditAvatar] = useState('');
+  const [imageToCrop, setImageToCrop] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
   const [savingName, setSavingName] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -36,46 +42,38 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
   useEffect(() => {
     if (showProfileModal) {
       setEditName(user?.name || '');
-      setEditAvatar(user?.avatarUrl || '');
+      setEditAvatar('');
+      setImageToCrop(null);
       setSaveSuccess(false);
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [showProfileModal, user?.name, user?.avatarUrl]);
+  }, [showProfileModal, user?.name]);
+
+  const onCropComplete = (croppedArea: any, croppedAreaPixels: any) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleCropSave = async () => {
+    if (imageToCrop && croppedAreaPixels) {
+      try {
+        const croppedImage = await getCroppedImg(imageToCrop, croppedAreaPixels);
+        setEditAvatar(croppedImage);
+        setImageToCrop(null);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
+  const handleDeleteAvatar = () => {
+    setEditAvatar('remove');
+  };
 
   const processImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        const MAX_WIDTH = 250;
-        const MAX_HEIGHT = 250;
-        let width = img.width;
-        let height = img.height;
-
-        if (width > height) {
-          if (width > MAX_WIDTH) {
-            height *= MAX_WIDTH / width;
-            width = MAX_WIDTH;
-          }
-        } else {
-          if (height > MAX_HEIGHT) {
-            width *= MAX_HEIGHT / height;
-            height = MAX_HEIGHT;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext('2d');
-        ctx?.drawImage(img, 0, 0, width, height);
-
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-        setEditAvatar(dataUrl);
-      };
-      img.src = e.target?.result as string;
+      setImageToCrop(e.target?.result as string);
     };
     reader.readAsDataURL(file);
   };
@@ -290,11 +288,22 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
             <div className="p-5 space-y-4">
               {/* Avatar + current role display */}
               <div className="flex items-center space-x-4 p-3 rounded-xl bg-stone-800/60 border border-stone-700/50">
-                <img
-                  src={editAvatar || user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
-                  alt={user?.name || 'User'}
-                  className="w-14 h-14 rounded-full border-2 border-amber-600/60 object-cover"
-                />
+                <div className="relative group">
+                  <img
+                    src={(editAvatar === 'remove' ? '' : editAvatar) || user?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80'}
+                    alt={user?.name || 'User'}
+                    className="w-14 h-14 rounded-full border-2 border-amber-600/60 object-cover"
+                  />
+                  {((editAvatar === 'remove' ? '' : editAvatar) || user?.avatarUrl) && (
+                    <button
+                      onClick={handleDeleteAvatar}
+                      className="absolute -top-1 -right-1 bg-rose-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                      title="Hapus foto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
                 <div>
                   <div className="text-sm font-bold text-stone-100">{user?.name}</div>
                   <div className="text-[11px] text-amber-400 font-semibold mt-0.5">
@@ -326,36 +335,58 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
                 <label className="block text-xs font-semibold text-stone-400 mb-1.5">
                   Foto Profil
                 </label>
-                <div
-                  className={`w-full p-4 border-2 border-dashed rounded-xl text-center transition-colors cursor-pointer ${
-                    isDragging ? 'border-amber-500 bg-amber-500/10' : 'border-stone-600 hover:border-stone-500 bg-stone-800'
-                  }`}
-                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                  onDragLeave={() => setIsDragging(false)}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDragging(false);
-                    const file = e.dataTransfer.files[0];
-                    if (file) processImageFile(file);
-                  }}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <UploadCloud className={`w-6 h-6 mx-auto mb-2 ${isDragging ? 'text-amber-500' : 'text-stone-400'}`} />
-                  <p className="text-xs text-stone-300">
-                    <span className="text-amber-400 font-semibold">Klik untuk upload</span> atau drag & drop
-                  </p>
-                  <p className="text-[10px] text-stone-500 mt-1">PNG, JPG dsb (otomatis di-resize)</p>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
+                {imageToCrop ? (
+                  <div className="relative w-full h-56 bg-stone-900 rounded-xl overflow-hidden border border-stone-600">
+                    <Cropper
+                      image={imageToCrop}
+                      crop={crop}
+                      zoom={zoom}
+                      aspect={1}
+                      cropShape="round"
+                      showGrid={false}
+                      onCropChange={setCrop}
+                      onZoomChange={setZoom}
+                      onCropComplete={onCropComplete}
+                    />
+                    <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-2">
+                      <button onClick={() => setImageToCrop(null)} className="px-4 py-1.5 bg-stone-700/80 hover:bg-stone-600 text-xs rounded-lg font-bold transition-colors">Batal</button>
+                      <button onClick={handleCropSave} className="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-xs rounded-lg font-bold text-white transition-colors">Terapkan</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`w-full p-4 border-2 border-dashed rounded-xl text-center transition-colors cursor-pointer ${
+                      isDragging ? 'border-amber-500 bg-amber-500/10' : 'border-stone-600 hover:border-stone-500 bg-stone-800'
+                    }`}
+                    onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                    onDragLeave={() => setIsDragging(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDragging(false);
+                      const file = e.dataTransfer.files[0];
                       if (file) processImageFile(file);
                     }}
-                  />
-                </div>
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <UploadCloud className={`w-6 h-6 mx-auto mb-2 ${isDragging ? 'text-amber-500' : 'text-stone-400'}`} />
+                    <p className="text-xs text-stone-300">
+                      <span className="text-amber-400 font-semibold">Klik untuk upload</span> atau drag & drop
+                    </p>
+                    <p className="text-[10px] text-stone-500 mt-1">PNG, JPG dsb (Anda bisa sesuaikan posisi foto)</p>
+                    <input
+                      type="file"
+                      ref={fileInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) processImageFile(file);
+                        // Reset input value to allow selecting same file twice
+                        if (fileInputRef.current) fileInputRef.current.value = '';
+                      }}
+                    />
+                  </div>
+                )}
                 <p className="text-[11px] text-stone-500 mt-1.5">
                   💾 Tersimpan di perangkat ini — sinkron otomatis saat online
                 </p>
@@ -393,7 +424,7 @@ export const Navbar: React.FC<NavbarProps> = ({ toggleMobileMenu }) => {
                 ) : savingName ? (
                   <><RefreshCw className="w-4 h-4 animate-spin" /><span>Menyimpan...</span></>
                 ) : (
-                  <><Save className="w-4 h-4" /><span>Simpan Nama</span></>
+                  <><Save className="w-4 h-4" /><span>Simpan</span></>
                 )}
               </button>
             </div>
