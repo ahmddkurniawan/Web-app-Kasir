@@ -7,6 +7,7 @@ interface AuthContextType {
   login: (username: string, userObj: User) => void;
   logout: () => void;
   updateProfile: (newName: string) => Promise<void>;
+  updateAvatar: (base64: string) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -83,6 +84,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const updateAvatar = async (base64: string) => {
+    if (!user) return;
+    const updatedUser = { ...user, avatarUrl: base64 };
+    setUser(updatedUser);
+    localStorage.setItem('ngopay_session_user', JSON.stringify(updatedUser));
+
+    // Sync to Supabase if online (skip demo accounts)
+    if (navigator.onLine && !updatedUser.id.startsWith('usr-admin-') && !updatedUser.id.startsWith('usr-owner-')) {
+      try {
+        const { supabase } = await import('../services/supabase');
+        await supabase.from('users').update({ avatar_url: base64, updated_at: new Date().toISOString() }).eq('id', updatedUser.id);
+      } catch (err) {
+        console.error('Failed to sync avatar to Supabase', err);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -91,6 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         login,
         logout,
         updateProfile,
+        updateAvatar,
         isAuthenticated: !!user,
       }}
     >
