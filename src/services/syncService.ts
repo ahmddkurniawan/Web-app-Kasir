@@ -34,7 +34,10 @@ class SyncManager {
     // Listen to changes on 'products' table
     supabase.channel('public:products')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, async (payload) => {
-        if (payload.new) {
+        if (payload.eventType === 'DELETE' && payload.old) {
+          await db.products.delete(payload.old.id);
+          window.dispatchEvent(new Event('realtime-update'));
+        } else if (payload.new && Object.keys(payload.new).length > 0) {
           const prod = mapProduct(payload.new);
           await db.products.put(prod);
           window.dispatchEvent(new Event('realtime-update'));

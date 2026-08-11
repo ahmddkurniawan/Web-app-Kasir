@@ -81,6 +81,20 @@ export const productService = {
     return fullProduct;
   },
 
+  async deleteProduct(productId: string): Promise<boolean> {
+    await db.products.delete(productId);
+
+    if (navigator.onLine) {
+      try {
+        await supabase.from('products').delete().eq('id', productId);
+      } catch (err) {
+        console.warn('Network error deleting product from server:', err);
+      }
+    }
+
+    return true;
+  },
+
   async getInventoryMovements(): Promise<InventoryMovement[]> {
     if (navigator.onLine) {
       try {

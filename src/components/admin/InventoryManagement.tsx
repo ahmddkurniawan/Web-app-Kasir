@@ -17,6 +17,9 @@ export const InventoryManagement: React.FC = () => {
 
   useEffect(() => {
     loadData();
+    const handleRealtimeUpdate = () => loadData();
+    window.addEventListener('realtime-update', handleRealtimeUpdate);
+    return () => window.removeEventListener('realtime-update', handleRealtimeUpdate);
   }, []);
 
   const loadData = async () => {

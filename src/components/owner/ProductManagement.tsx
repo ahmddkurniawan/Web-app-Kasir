@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { productService } from '../../services/api';
 import { Product, ProductCategory } from '../../types';
 import { formatRupiah } from '../../utils/device';
-import { Plus, Search, Edit3, Coffee, Check, X, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Edit3, Trash2, Coffee, Check, X, AlertTriangle } from 'lucide-react';
 
 export const ProductManagement: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -16,6 +16,9 @@ export const ProductManagement: React.FC = () => {
 
   useEffect(() => {
     loadProducts();
+    const handleRealtimeUpdate = () => loadProducts();
+    window.addEventListener('realtime-update', handleRealtimeUpdate);
+    return () => window.removeEventListener('realtime-update', handleRealtimeUpdate);
   }, []);
 
   const loadProducts = async () => {
@@ -81,6 +84,13 @@ export const ProductManagement: React.FC = () => {
     const newStatus = p.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     await productService.saveProduct({ ...p, status: newStatus });
     await loadProducts();
+  };
+
+  const handleDeleteProduct = async (p: Product) => {
+    if (window.confirm(`Apakah Anda yakin ingin menghapus produk "${p.name}"?`)) {
+      await productService.deleteProduct(p.id);
+      await loadProducts();
+    }
   };
 
   return (
@@ -210,13 +220,22 @@ export const ProductManagement: React.FC = () => {
                       </button>
                     </td>
                     <td className="py-2.5 px-3 text-center">
-                      <button
-                        onClick={() => handleOpenEdit(p)}
-                        className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 transition-colors"
-                        title="Edit Produk"
-                      >
-                        <Edit3 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center justify-center space-x-2">
+                        <button
+                          onClick={() => handleOpenEdit(p)}
+                          className="p-1.5 rounded-lg bg-stone-800 hover:bg-stone-700 text-stone-200 transition-colors"
+                          title="Edit Produk"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProduct(p)}
+                          className="p-1.5 rounded-lg bg-stone-800 hover:bg-rose-600 hover:text-white text-stone-200 transition-colors"
+                          title="Hapus Produk"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

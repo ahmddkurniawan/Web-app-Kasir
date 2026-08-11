@@ -38,6 +38,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'admin-dashboard', label: 'Dashboard Kasir', icon: LayoutDashboard },
     { id: 'pos', label: 'Kasir POS', icon: ShoppingCart },
     { id: 'transactions', label: 'Riwayat Transaksi', icon: Receipt },
+    { id: 'product-management', label: 'Kelola Produk', icon: Coffee },
     { id: 'inventory', label: 'Stok Produk', icon: Package },
     { id: 'users', label: 'Manajemen Pengguna', icon: UserCog },
   ];

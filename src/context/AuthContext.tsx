@@ -6,6 +6,7 @@ interface AuthContextType {
   role: UserRole | null;
   login: (username: string, userObj: User) => void;
   logout: () => void;
+  updateProfile: (newName: string) => Promise<void>;
   isAuthenticated: boolean;
 }
 
@@ -66,6 +67,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('ngopay_session_user');
   };
 
+  const updateProfile = async (newName: string) => {
+    if (!user) return;
+    const updatedUser = { ...user, name: newName };
+    setUser(updatedUser);
+    localStorage.setItem('ngopay_session_user', JSON.stringify(updatedUser));
+
+    if (navigator.onLine && !updatedUser.id.startsWith('usr-admin-') && !updatedUser.id.startsWith('usr-owner-')) {
+      try {
+        const { supabase } = await import('../services/supabase');
+        await supabase.from('users').update({ name: newName, updated_at: new Date().toISOString() }).eq('id', updatedUser.id);
+      } catch (err) {
+        console.error('Failed to update profile to Supabase', err);
+      }
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -73,6 +90,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role: user?.role || null,
         login,
         logout,
+        updateProfile,
         isAuthenticated: !!user,
       }}
     >
